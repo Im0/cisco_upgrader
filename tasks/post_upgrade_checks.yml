@@ -1,0 +1,75 @@
+# Delay/wait for 3 minutes before even trying to connect.  Test every 10 seconds for a total of 15 minutes max.
+- name: reboot > Wait for port 22 to become open
+  wait_for:
+    sleep: 20
+    delay: 180
+    timeout: 1800
+    port: 22
+    host: "{{ inventory_hostname }}"
+    state: started
+  connection: local
+  ignore_errors: yes
+  register: reboot_timer
+  when: upgrade_required
+
+- name: reboot > Wait for connection again if previous wait_for failed
+  pause:
+    seconds: 60
+  when:
+    - upgrade_required
+    - reboot_timer is failed
+    - UpgradeType == 'cat-software-install'
+
+# This is required as for some reason the first one fails with network
+# unreachable.  (Even after playing around with timeouts)
+- name: reboot > Second wait for port 22 to become open
+  wait_for:
+    sleep: 20
+    timeout: 300
+    port: 22
+    host: "{{ inventory_hostname }}"
+    state: started
+  connection: local
+  when:
+    - upgrade_required
+    - reboot_timer is failed
+    - UpgradeType == 'cat-software-install'
+
+
+- name: reboot > cat-software-install > Get cat ios build version
+  ios_command:
+    commands:
+      - 'more flash:packages.conf'
+  register: pkg_conf_output
+  when:
+    - upgrade_required
+    - UpgradeType == 'cat-software-install'
+
+- name: reboot > cat-software-install > Parse package.conf output to get build number
+  command_parser:
+    file: "{{ role_path }}/tasks/parsers/ios/more_packages_conf.yml"
+    content: "{{ pkg_conf_output.stdout[0] }}"
+  when:
+    - upgrade_required
+    - UpgradeType == 'cat-software-install'
+
+
+- name: reboot > Set old version fact
+  set_fact:
+    old_ansible_net_version: "{{ ansible_net_version }}"
+
+- name: reboot > Get facts from IOS device
+  ios_facts:
+    gather_subset: all
+
+- name: reboot > Display version information (ios-bin-upgrade)
+  debug:
+    msg: "Old version: {{ existing_image_name }} New version: {{ ansible_net_image }}" 
+  when:
+    - UpgradeType == 'ios-bin-upgrade'
+
+- name: reboot > Display version information (cat-software-install)
+  debug:
+    msg: "Old version: {{ old_ansible_net_version }} New version: {{ cat_package_information.build_version }}" 
+  when:
+    - UpgradeType == 'cat-software-install'

@@ -1,0 +1,21 @@
+---
+- name: PARSER META DATA
+  parser_metadata:
+    version: 1.0
+    command: 'verify /md5 image.bin'
+    network_os: ios
+
+- name: MATCH PATTERN
+  pattern_match:
+    regex: ".*verify.*\\s=\\s(\\S+)$"
+  register: section
+  export: no
+
+- name: GENERATE JSON DATA STRUCTURE
+  set_vars:
+    md5: "{{ section.matches.0 }}"
+  export: yes
+  register: current_switch_image
+
+
+# verify /md5 (flash:c3750-ipservicesk9-mz.122-55.SE12.bin) = b28cf0ed5cc0d1928ea4f6656e1c8dde

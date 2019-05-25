@@ -1,0 +1,82 @@
+---
+########################################################################
+# High level plan of attack
+########################################################################
+# * Check configuration file is enabled: ip scp server enable
+# * Backup the current image if possible (ios only)
+#   - Unless image exists locally
+# * Check space
+#   - If enough space, keep two images
+#   - If not enough space, delete existing image before upload
+# * Stack switch specifics (TODO)
+# * Upload image
+#   - Verify md5sum before reboot
+# * Set the boot commands, or, install image.
+# * Wait for device to come back online
+#   - Verify that the versions have updated
+########################################################################
+#
+# Requirements:
+# - Device must have SSH support
+#
+########################################################################
+# TODO:
+# - Option to save running config to startup config
+# - Option to take a pre-flight backup
+# - Different image install methods per device type (WIP)
+# -- Stacked & VSS switch support
+# - Additional pre and post flight checks/reports
+########################################################################
+# Upgrade Types:
+# - cat-software-install (~ 3850's) - installers/install_cat_software_install.yml
+# - ios-bin-upgrade (~ 3750's 800's 1900 2900 3900) - installers/install_ios_config_boot_and_reboot.yml
+# - nxos-upgrade (N2K , N5K, N7K, N9K) - TODO
+# - ios-xr-upgrade (ASR9k) - TODO
+########################################################################
+# Playbook below
+########################################################################
+- name: Starting device upgrade
+  debug:
+    msg: "{{ inventory_hostname }} to be upgraded with {{ UpgradeType }} to {{ Image }} from {{ ImagePath }}"
+
+- name: Set the new_image variable from the image name
+  set_fact:
+    new_image: "{{ Image }}"
+
+- name: Import facts from device
+  import_tasks: gather_facts.yml
+
+# Ensure scp is enabled on the device - This changes the configuration on the
+# device.  
+- name: Ensure scp is enabled on the device
+  import_tasks: config_pre_reqs.yml
+
+- name: Check the devices for available space. Populate variable device_storage.
+  import_tasks: check_space.yml
+
+# Check if enough space and upload new image
+- name: Checking if there is enough space on the device and uploading image
+  import_tasks: check_and_upload_image.yml
+
+########################################################################
+# Tasks below here impact the service of the device.  (reboot)         #
+########################################################################
+# Configure boot image configuration setting and reboot for IOS devices
+- import_tasks: installers/install_ios_config_boot_and_reboot.yml
+  when: 
+    - upgrade_required
+    - UpgradeType == 'ios-bin-upgrade'
+    - State == 'upgrade'
+
+# Run the installer for a cat 'install' method
+- import_tasks: installers/install_cat_software_install.yml
+  when: 
+    - upgrade_required
+    - UpgradeType == 'cat-software-install'
+    - State == 'upgrade'
+
+# Wait for device to become active again after reboot and report results
+- import_tasks: post_upgrade_checks.yml
+  when: 
+    - upgrade_required
+    - State == 'upgrade'

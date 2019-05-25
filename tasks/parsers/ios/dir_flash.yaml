@@ -1,0 +1,31 @@
+---
+- name: PARSER META DATA
+  parser_metadata:
+    version: 1.0
+    command: 'dir flash:'
+    network_os: ios
+
+- name: MATCH PATTERN
+  pattern_match:
+    regex: ".*^(\\d+) bytes total \\((\\d+) bytes free\\)"
+  register: section
+  export: no
+
+- name: GENERATE JSON DATA STRUCTURE
+  set_vars:
+    size: "{{ section.matches.0 }}"
+    available: "{{ section.matches.1 }}"
+  export: yes
+  register: device_storage
+
+# ok: [10.122.238.133] => {
+#    "section": [
+#        {
+#            "matches": [
+#                "32514048",
+#                "6770688"
+#            ]
+#        }
+#    ]
+#}
+

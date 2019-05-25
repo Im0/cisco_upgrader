@@ -1,0 +1,25 @@
+---
+# Don't delete the existing files from the switch
+
+- name: reboot > Execute install command
+  ios_command:
+    commands:
+      - software install file flash:{{ new_image }} new force on-reboot
+  register: cat_install_output
+  when: upgrade_required
+
+- name: reboot > Debug output from install command
+  debug:
+    var: cat_install_output
+
+- name: reboot > Save the running configuration to startup
+  ios_config:
+    save_when: always
+  when: upgrade_required
+
+- name: reboot > REBOOT ROUTER
+  ios_command:
+    commands:
+      - "reload\n"
+  when: upgrade_required or reboot_required
+

@@ -1,0 +1,4 @@
+---
+# defaults file for im0.cisco_upgrader
+ImagePath: './'
+BackupImage: False

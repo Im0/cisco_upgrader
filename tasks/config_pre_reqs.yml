@@ -1,0 +1,18 @@
+---
+- name: pre_req > Check if scp is enabled in config file
+  assert:
+    that:
+      - "'ip scp server enable' in ansible_net_config"
+  ignore_errors: yes
+  register: scp_enabled
+
+- name: pre_req > Debug out the variable
+  debug:
+    var: scp_enabled
+
+- name: pre_req > Configure SCP on device
+  ios_config:
+    lines:
+      - ip scp server enable
+  when:
+    - scp_enabled is failed

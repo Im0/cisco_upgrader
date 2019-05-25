@@ -1,0 +1,20 @@
+---
+- name: PARSER META DATA
+  parser_metadata:
+    version: 1.0
+    command: 'more flash:packages.conf'
+    network_os: ios
+
+- name: MATCH PATTERN
+  pattern_match:
+    #regex: ".*verify.*\\s=\\s(\\S+)$"
+    regex: ".*Build: ([\\w\\d\\.\\S]+)"
+  register: section
+  export: no
+
+- name: GENERATE JSON DATA STRUCTURE
+  set_vars:
+    build_version: "{{ section.matches.0 }}"
+    build_version_short: "{{ section.matches.0 | regex_replace('([\\d+\\.+])\\.([\\S+])$', '\\1\\2') }}"
+  export: yes
+  register: cat_package_information

@@ -1,0 +1,134 @@
+---
+- name: upload > Check to see if we have a local .bin image backup
+  stat:
+    path: "{{ ImagePath }}/{{ existing_image_name }}"
+    checksum_algorithm: md5
+  register: local_bin_image
+  ignore_errors: true
+
+#     "local_bin_image": {
+#        "stat": {
+#            "checksum": "4bd858c66763df6b6ea419ee15ee9612",
+
+- name: upload > Print out locally stored image data
+  debug:
+    var: local_bin_image
+  ignore_errors: true
+
+- name: upload > Backup (download) existing image from device
+  net_get:
+    src: "{{ ansible_net_image }}"
+    dest: "{{ ImagePath }}"
+  when:
+    - BackupImage == True
+    - local_bin_image is failed
+    - UpgradeType == 'ios-bin-upgrade'
+
+
+- name: upload > Calculate the new image md5sum (local)
+  stat: 
+    path: "{{ ImagePath }}/{{ new_image }}"
+    checksum_algorithm: md5
+  register: local_new_image
+
+# Intention here is to NOT re-upload if there is a file of same size
+# on remote system.
+- name: upload > Print out local new image details
+  debug:
+    var: local_new_image
+
+
+
+#- name: upload > Debugging storage size
+#  debug:
+#    msg: "{{ local_new_image.stat.size }} > {{ device_storage.available }} delete {{ ansible_net_image }}"
+
+# Check if enough space for the image
+- name: upload > Remove old image due to lack of space (ios upgrade)
+  ios_command:
+    commands:
+      - command: "delete /force {{ ansible_net_image }}"
+        prompt: "Delete filename \\\\[{{ existing_image_name }}\\\\]?"
+        answer: 'y'
+  when:
+    - upgrade_required
+    - local_new_image.stat.size > device_storage.available
+    - UpgradeType == 'ios-bin-upgrade'
+
+- name: upload > Debug output for space
+  debug:
+    msg: "Local image size {{ local_new_image.stat.size }}  doubled {{ local_new_image.stat.size * 2 }} > {{ device_storage.available }}"
+  when:
+    - upgrade_required
+    - UpgradeType == 'cat-software-install'
+
+- name: "Display directory listing output"
+  debug:
+    msg: "DEBUG: new image {{ new_image }} dir_output {{ dir_output.stdout[0] }}"
+
+- name: "Display size of new image"
+  debug:
+    msg: "DEBUG: new image stat size {{ local_new_image.stat.size }}"
+
+# TODO: Consider checking if any existing packages are on the device from
+#       older versions.  If rolling back to an old version, and, the pkg's are
+#       there.... why upload?
+- name: upload > Remove old image due to lack of space (cat upgrade)
+  ios_command:
+    commands:
+      - command: "software clean"
+        prompt: "Do you want to proceed with the deletion?"
+        answer: 'y'
+  when:
+    - upgrade_required
+    - (local_new_image.stat.size * 2) > device_storage.available
+    - "new_image not in dir_output.stdout[0]"
+    - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
+    - UpgradeType == 'cat-software-install'
+
+- name: upload > Upload image {{ new_image }}
+  net_put:
+    src: "{{ ImagePath }}/{{ new_image }}"
+    dest: "flash:{{ new_image }}"
+  when: 
+    - upgrade_required
+    - "new_image not in dir_output.stdout[0]"
+
+
+- name: upload > Check md5sum of uploaded image
+  ios_command:
+    commands:
+     - verify /md5 flash:{{ new_image }}
+    wait_for:
+     - result[0] contains {{ local_new_image.stat.checksum }}
+  register: switch_image_verify
+  when: 
+    - upgrade_required
+
+- name: upload > Switch returned md5sum
+  debug:
+    var: switch_image_verify.stdout
+  when: 
+    - upgrade_required
+
+- name: check > parse the raw output from 'dir flash' output
+  command_parser:
+    file: "{{ role_path }}/tasks/parsers/ios/verify.yml"
+    content: "{{ switch_image_verify.stdout[0] }}"
+  when: 
+    - upgrade_required
+
+
+- name: check > debug > contents of current_switch_image
+  debug:
+    var: current_switch_image
+  when: 
+    - upgrade_required
+
+
+- name: upload > Fail when uploaded image md5 does not match local md5
+  fail:
+    msg: "Uploaded image {{ new_image }} md5 did not match.  Perhaps issue in upload. {{ current_switch_image.md5 }} is not {{ local_new_image.stat.checksum }}"
+  when:
+    - upgrade_required
+    - local_new_image.stat.checksum != current_switch_image.md5

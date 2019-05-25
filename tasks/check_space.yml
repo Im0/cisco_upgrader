@@ -1,0 +1,18 @@
+- name: check > Executing dir flash on remote device
+  ios_command:
+    commands:
+      - 'dir flash:'
+  register: dir_output
+
+- name: check > Print out flash dir variable
+  debug:
+    var: dir_output
+
+- name: check > parse the raw output from 'dir flash' output
+  command_parser:
+    file: "{{ role_path }}/tasks/parsers/ios/dir_flash.yaml"
+    content: "{{ dir_output.stdout[0] }}"
+
+- name: check > Print out flash dir variable
+  debug:
+    var: device_storage

@@ -1,0 +1,79 @@
+---
+- name: always > Get facts from IOS device
+  ios_facts:
+    gather_subset: all
+
+# flash:c3750-ipservicesk9-mz.122-53.SE2.bin getting c3750-ipservicesk9-mz.122-53.SE2.bin
+- name: always > Get image name without the storage device
+  set_fact:
+    existing_image_name: "{{ ansible_net_image.split(':')[1] }}"
+    upgrade_required: False
+
+# c3750-ipservicesk9-mz.122-53.SE2.bin getting c3750
+- name: always > Set image model prefix
+  set_fact:
+    existing_image_model_prefix: "{{ existing_image_name.split('-')[0] }}"
+
+- name: always > Display version information
+  debug:
+    msg: "The switch is version: {{ ansible_net_model }} / {{ ansible_net_version }} / {{ ansible_net_image }} / {{ ansible_net_filesystems }}" 
+
+# START of ios checks #
+- name: always > ios-bin-upgrade > Set upgrade_required to True | as {{ new_image }} is not in {{ ansible_net_image }}
+  set_fact:
+    upgrade_required: True
+  when: 
+    - new_image not in ansible_net_image
+    - UpgradeType == 'ios-bin-upgrade'
+
+- name: always > ios-bin-upgrade > Set upgrade_required to False | as {{ new_image }} is in {{ ansible_net_image }}
+  set_fact:
+    upgrade_required: False
+  when: 
+    - new_image in ansible_net_image
+    - UpgradeType == 'ios-bin-upgrade'
+# END of ios checks #
+
+# Start of cat upgrade checks #
+# Versions are different on cat-software versions compared to traditional IOS
+- name: always > cat-software-install > Get cat ios build version
+  ios_command:
+    commands:
+      - 'more flash:packages.conf'
+  register: pkg_conf_output
+  when:
+    - UpgradeType == 'cat-software-install'
+
+- name: always > cat-software-install > Parse package.conf output to get build number
+  command_parser:
+    file: "parsers/ios/more_packages_conf.yml"
+    content: "{{ pkg_conf_output.stdout[0] }}"
+  when:
+    - UpgradeType == 'cat-software-install'
+
+
+- name: always > Debug > cat-software-install > Set upgrade_required fact (cat-software-install)
+  debug:
+    msg: "Build version {{ cat_package_information.build_version }} Versions new_image {{ new_image }}  ansible_net_version {{ ansible_net_version }}"
+  when:
+    - UpgradeType == 'cat-software-install'
+
+
+- name: always > cat-software-install > Set upgrade_required True fact (cat-software-install)
+  set_fact:
+    upgrade_required: True
+  when:
+    - UpgradeType == 'cat-software-install'
+    - cat_package_information.build_version not in new_image
+
+# If the running version (ansible_net_version) does not match the packages.conf build version 
+# (cat_package_information.build_version_short) we need to reboot.
+- name: always > cat-software-install > Set reboot_required due to reboot True fact (cat-software-install)
+  set_fact:
+    reboot_required: True
+  when:
+    - UpgradeType == 'cat-software-install'
+    - cat_package_information.build_version_short not in ansible_net_version
+      # Regex required to remove the last .
+
+# End of cat upgrade checks #

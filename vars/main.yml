@@ -1,0 +1,14 @@
+---
+# vars file for im0.cisco_upgrader
+
+# auto upgrade Types is work in progress
+upgradeTypes:
+  ios-bin-upgrade:
+    - WS-C2960
+    - C881
+  cat-software-install:
+    - WS-C3850
+
+# Internal variables, initially set to False.  Playbook determines if either need to be true.
+upgrade_required: False
+reboot_required: False
