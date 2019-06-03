@@ -38,10 +38,12 @@
 - name: Starting device upgrade
   debug:
     msg: "{{ inventory_hostname }} to be upgraded with {{ UpgradeType }} to {{ Image }} from {{ ImagePath }}"
+  delegate_to: localhost
 
 - name: Set the new_image variable from the image name
   set_fact:
     new_image: "{{ Image }}"
+  delegate_to: localhost
 
 - name: Import facts from device
   import_tasks: gather_facts.yml
@@ -50,6 +52,7 @@
 # device.  
 - name: Ensure scp is enabled on the device
   import_tasks: config_pre_reqs.yml
+  become: true
 
 - name: Check the devices for available space. Populate variable device_storage.
   import_tasks: check_space.yml
@@ -57,6 +60,7 @@
 # Check if enough space and upload new image
 - name: Checking if there is enough space on the device and uploading image
   import_tasks: check_and_upload_image.yml
+  become: true
 
 ########################################################################
 # Tasks below here impact the service of the device.  (reboot)         #
@@ -67,6 +71,7 @@
     - upgrade_required
     - UpgradeType == 'ios-bin-upgrade'
     - State == 'upgrade'
+  become: true
 
 # Run the installer for a cat 'install' method
 - import_tasks: installers/install_cat_software_install.yml
@@ -74,6 +79,7 @@
     - upgrade_required
     - UpgradeType == 'cat-software-install'
     - State == 'upgrade'
+  become: true
 
 # Wait for device to become active again after reboot and report results
 - import_tasks: post_upgrade_checks.yml
