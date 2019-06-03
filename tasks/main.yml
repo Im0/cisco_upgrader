@@ -37,7 +37,7 @@
 ########################################################################
 - name: Starting device upgrade
   debug:
-    msg: "{{ inventory_hostname }} to be upgraded with {{ UpgradeType }} to {{ Image }} from {{ ImagePath }}"
+    msg: "{{ inventory_hostname }} to be {{ State }}d with {{ UpgradeType }} to {{ Image }} from {{ ImagePath }}"
   delegate_to: localhost
 
 - name: Set the new_image variable from the image name

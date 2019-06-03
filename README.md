@@ -19,7 +19,7 @@ Role Variables
 
 * `Image`: The image filename.
 * `ImagePath`: The path to image filename.  Default: `./`.
-* `State`: Either `stage` the image for future manual reboot, or, `upgrade` will stage and reboot the device.
+* `State`: Either `stage` the image for future manual reboot (and boot settings), or, `upgrade` will stage and reboot the device.
 * `UpgradeType`: Upgrade types are either `ios-bin-upgrade`, `cat-software-install` or `auto`.
 * `BackupImage`: True of False, backup the existing image from the switch.  `ios-bin-upgrade` only.  Default: `False`.
 
