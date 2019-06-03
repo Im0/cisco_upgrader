@@ -51,9 +51,11 @@
         prompt: "Delete filename \\\\[{{ existing_image_name }}\\\\]?"
         answer: 'y'
   when:
-    - upgrade_required
-    - local_new_image.stat.size > device_storage.available
     - UpgradeType == 'ios-bin-upgrade'
+    - upgrade_required
+    - "new_image not in dir_output.stdout[0]"
+    - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
+    - local_new_image.stat.size > device_storage.available
 
 - name: upload > Debug output for space
   debug:
@@ -80,11 +82,11 @@
         prompt: "Do you want to proceed with the deletion?"
         answer: 'y'
   when:
+    - UpgradeType == 'cat-software-install'
     - upgrade_required
     - (local_new_image.stat.size * 2) > device_storage.available
     - "new_image not in dir_output.stdout[0]"
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
-    - UpgradeType == 'cat-software-install'
 
 # Upload image if the image is not present on the device.
 - name: upload > Upload image {{ new_image }}
