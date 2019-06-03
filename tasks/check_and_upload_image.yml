@@ -86,12 +86,13 @@
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
     - UpgradeType == 'cat-software-install'
 
+# Upload image if the image is not present on the device.
 - name: upload > Upload image {{ new_image }}
   net_put:
     src: "{{ ImagePath }}/{{ new_image }}"
     dest: "flash:{{ new_image }}"
   when: 
-    - upgrade_required
+  # - upgrade_required # TODO: Or if boot is set to new_image, but, new_image is not present in dir_output.stdout[0]
     - "new_image not in dir_output.stdout[0]"
 
 
