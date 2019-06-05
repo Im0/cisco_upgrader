@@ -1,4 +1,4 @@
-Im0.cisco_upgrader
+im0.cisco_upgrader
 ==================
 
 This role assists with deploying new images onto a range of Cisco network devices.
@@ -92,7 +92,7 @@ Stage an image for manual reboot:
     - hosts: switches
       gather_facts: no
       roles:
-         - { role: Im0.cisco_upgrader, 
+         - { role: im0.cisco_upgrader, 
                Image: 'c2960-lanbasek9-mz.122-55.SE12.bin',
                State: stage,
                ImagePath: '/tmp',
@@ -106,7 +106,7 @@ Upgrade device and reload:
 ```
 - name: Upgrade device
   include_role:
-    name: Im0.cisco_upgrader
+    name: im0.cisco_upgrader
   vars:
     Image: 'c2960-lanbasek9-mz.122-55.SE12.bin'
     State: 'upgrade'
