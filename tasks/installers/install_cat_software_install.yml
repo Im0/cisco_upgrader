@@ -22,4 +22,3 @@
     commands:
       - "reload\n"
   when: upgrade_required or reboot_required
-
