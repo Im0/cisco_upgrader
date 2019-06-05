@@ -67,7 +67,7 @@
 ########################################################################
 # Configure boot image configuration setting and reboot for IOS devices
 - import_tasks: installers/install_ios_config_boot_and_reboot.yml
-  when: 
+  when:
     - upgrade_required
     - UpgradeType == 'ios-bin-upgrade'
     - State == 'upgrade'
@@ -75,7 +75,7 @@
 
 # Run the installer for a cat 'install' method
 - import_tasks: installers/install_cat_software_install.yml
-  when: 
+  when:
     - upgrade_required
     - UpgradeType == 'cat-software-install'
     - State == 'upgrade'
@@ -83,6 +83,6 @@
 
 # Wait for device to become active again after reboot and report results
 - import_tasks: post_upgrade_checks.yml
-  when: 
+  when:
     - upgrade_required
     - State == 'upgrade'

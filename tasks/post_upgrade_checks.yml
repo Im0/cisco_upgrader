@@ -64,12 +64,12 @@
 
 - name: reboot > Display version information (ios-bin-upgrade)
   debug:
-    msg: "Old version: {{ existing_image_name }} New version: {{ ansible_net_image }}" 
+    msg: "Old version: {{ existing_image_name }} New version: {{ ansible_net_image }}"
   when:
     - UpgradeType == 'ios-bin-upgrade'
 
 - name: reboot > Display version information (cat-software-install)
   debug:
-    msg: "Old version: {{ old_ansible_net_version }} New version: {{ cat_package_information.build_version }}" 
+    msg: "Old version: {{ old_ansible_net_version }} New version: {{ cat_package_information.build_version }}"
   when:
     - UpgradeType == 'cat-software-install'

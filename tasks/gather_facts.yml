@@ -33,20 +33,20 @@
 
 - name: gather facts > Display version information
   debug:
-    msg: "The switch is version: {{ ansible_net_model }} / {{ ansible_net_version }} / {{ ansible_net_image }} / {{ ansible_net_filesystems }}" 
+    msg: "The switch is version: {{ ansible_net_model }} / {{ ansible_net_version }} / {{ ansible_net_image }} / {{ ansible_net_filesystems }}"
 
 # START of ios checks #
 - name: gather facts > ios-bin-upgrade > Set upgrade_required to True | as {{ new_image }} is not in {{ ansible_net_image }}
   set_fact:
     upgrade_required: True
-  when: 
+  when:
     - new_image not in ansible_net_image
     - UpgradeType == 'ios-bin-upgrade'
 
 - name: gather facts > ios-bin-upgrade > Set upgrade_required to False | as {{ new_image }} is in {{ ansible_net_image }}
   set_fact:
     upgrade_required: False
-  when: 
+  when:
     - new_image in ansible_net_image
     - UpgradeType == 'ios-bin-upgrade'
 # END of ios checks #

@@ -20,13 +20,13 @@
     src: "{{ ansible_net_image }}"
     dest: "{{ ImagePath }}"
   when:
-    - BackupImage == True
+    - BackupImage
     - local_bin_image is failed
     - UpgradeType == 'ios-bin-upgrade'
 
 
 - name: upload > Calculate the new image md5sum (local)
-  stat: 
+  stat:
     path: "{{ ImagePath }}/{{ new_image }}"
     checksum_algorithm: md5
   register: local_new_image
@@ -93,7 +93,7 @@
   net_put:
     src: "{{ ImagePath }}/{{ new_image }}"
     dest: "flash:{{ new_image }}"
-  when: 
+  when:
   # - upgrade_required # TODO: Or if boot is set to new_image, but, new_image is not present in dir_output.stdout[0]
     - "new_image not in dir_output.stdout[0]"
 
@@ -105,27 +105,27 @@
     wait_for:
      - result[0] contains {{ local_new_image.stat.checksum }}
   register: switch_image_verify
-  when: 
+  when:
     - upgrade_required
 
 - name: upload > Switch returned md5sum
   debug:
     var: switch_image_verify.stdout
-  when: 
+  when:
     - upgrade_required
 
 - name: check > parse the raw output from 'dir flash' output
   command_parser:
     file: "{{ role_path }}/tasks/parsers/ios/verify.yml"
     content: "{{ switch_image_verify.stdout[0] }}"
-  when: 
+  when:
     - upgrade_required
 
 
 - name: check > debug > contents of current_switch_image
   debug:
     var: current_switch_image
-  when: 
+  when:
     - upgrade_required
 
 
