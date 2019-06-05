@@ -8,7 +8,19 @@ galaxy_info:
   min_ansible_version: 2.7
 
   platforms:
-    - name: Anything that can run Ansible
+    - name: Debian
+      versions:
+      - all
+    - name: EL
+      versions:
+      - all
+    - name: Fedora
+      versions:
+      - all
+    - name: FreeBSD
+      versions:
+      - all
+    - name: Ubuntu
       versions:
       - all
 
