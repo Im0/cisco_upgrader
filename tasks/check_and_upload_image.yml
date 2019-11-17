@@ -55,7 +55,7 @@
     - upgrade_required
     - "new_image not in dir_output.stdout[0]"
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
-    - local_new_image.stat.size > device_storage.available
+    - local_new_image.stat.size > device_storage.available|int
 
 - name: upload > Debug output for space
   debug:
@@ -84,7 +84,7 @@
   when:
     - UpgradeType == 'cat-software-install'
     - upgrade_required
-    - (local_new_image.stat.size * 2) > device_storage.available
+    - (local_new_image.stat.size * 2) > device_storage.available|int
     - "new_image not in dir_output.stdout[0]"
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
 
