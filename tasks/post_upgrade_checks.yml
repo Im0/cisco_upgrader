@@ -10,13 +10,13 @@
   connection: local
   ignore_errors: yes
   register: reboot_timer
-  when: upgrade_required
+  when: upgrade_required|bool
 
 - name: reboot > Wait for connection again if previous wait_for failed
   pause:
     seconds: 60
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - reboot_timer is failed
     - UpgradeType == 'cat-software-install'
 
@@ -31,7 +31,7 @@
     state: started
   connection: local
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - reboot_timer is failed
     - UpgradeType == 'cat-software-install'
 
@@ -42,7 +42,7 @@
       - 'more flash:packages.conf'
   register: pkg_conf_output
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - UpgradeType == 'cat-software-install'
 
 - name: reboot > cat-software-install > Parse package.conf output to get build number
@@ -50,7 +50,7 @@
     file: "{{ role_path }}/tasks/parsers/ios/more_packages_conf.yml"
     content: "{{ pkg_conf_output.stdout[0] }}"
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - UpgradeType == 'cat-software-install'
 
 

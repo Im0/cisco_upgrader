@@ -2,17 +2,17 @@
 - name: reboot > About to update boot
   debug:
     msg: "Updating boot image to flash:{{ new_image }}"
-  when: upgrade_required
+  when: upgrade_required|bool
 
 - name: reboot > Update boot image
   ios_config:
     lines:
       - boot system flash:{{ new_image }}
     save_when: changed
-  when: upgrade_required
+  when: upgrade_required|bool
 
 - name: reboot > REBOOT ROUTER
   ios_command:
     commands:
       - "reload\n"
-  when: upgrade_required
+  when: upgrade_required|bool
