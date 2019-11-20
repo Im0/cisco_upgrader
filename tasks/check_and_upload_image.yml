@@ -20,7 +20,7 @@
     src: "{{ ansible_net_image }}"
     dest: "{{ ImagePath }}"
   when:
-    - BackupImage
+    - BackupImage|bool
     - local_bin_image is failed
     - UpgradeType == 'ios-bin-upgrade'
 
@@ -52,16 +52,16 @@
         answer: 'y'
   when:
     - UpgradeType == 'ios-bin-upgrade'
-    - upgrade_required
+    - upgrade_required|bool
     - "new_image not in dir_output.stdout[0]"
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
-    - local_new_image.stat.size > device_storage.available
+    - local_new_image.stat.size > device_storage.available|int
 
 - name: upload > Debug output for space
   debug:
     msg: "Local image size {{ local_new_image.stat.size }}  doubled {{ local_new_image.stat.size * 2 }} > {{ device_storage.available }}"
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - UpgradeType == 'cat-software-install'
 
 - name: "Display directory listing output"
@@ -83,8 +83,8 @@
         answer: 'y'
   when:
     - UpgradeType == 'cat-software-install'
-    - upgrade_required
-    - (local_new_image.stat.size * 2) > device_storage.available
+    - upgrade_required|bool
+    - (local_new_image.stat.size * 2) > device_storage.available|int
     - "new_image not in dir_output.stdout[0]"
     - '"local_new_image.stat.size" not in "dir_output.stdout[0]"'
 
@@ -94,7 +94,7 @@
     src: "{{ ImagePath }}/{{ new_image }}"
     dest: "flash:{{ new_image }}"
   when:
-  # - upgrade_required # TODO: Or if boot is set to new_image, but, new_image is not present in dir_output.stdout[0]
+  # - upgrade_required|bool # TODO: Or if boot is set to new_image, but, new_image is not present in dir_output.stdout[0]
     - "new_image not in dir_output.stdout[0]"
 
 
@@ -106,32 +106,32 @@
      - result[0] contains {{ local_new_image.stat.checksum }}
   register: switch_image_verify
   when:
-    - upgrade_required
+    - upgrade_required|bool
 
 - name: upload > Switch returned md5sum
   debug:
     var: switch_image_verify.stdout
   when:
-    - upgrade_required
+    - upgrade_required|bool
 
 - name: check > parse the raw output from 'dir flash' output
   command_parser:
     file: "{{ role_path }}/tasks/parsers/ios/verify.yml"
     content: "{{ switch_image_verify.stdout[0] }}"
   when:
-    - upgrade_required
+    - upgrade_required|bool
 
 
 - name: check > debug > contents of current_switch_image
   debug:
     var: current_switch_image
   when:
-    - upgrade_required
+    - upgrade_required|bool
 
 
 - name: upload > Fail when uploaded image md5 does not match local md5
   fail:
     msg: "Uploaded image {{ new_image }} md5 did not match.  Perhaps issue in upload. {{ current_switch_image.md5 }} is not {{ local_new_image.stat.checksum }}"
   when:
-    - upgrade_required
+    - upgrade_required|bool
     - local_new_image.stat.checksum != current_switch_image.md5
